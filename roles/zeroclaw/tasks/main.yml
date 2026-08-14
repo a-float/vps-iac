@@ -1,0 +1,24 @@
+- name: Create ZeroClaw directory
+  ansible.builtin.file:
+    path: /opt/services/zeroclaw
+    state: directory
+    mode: "0755"
+
+- name: Create ZeroClaw data directory
+  ansible.builtin.file:
+    path: /opt/services/zeroclaw/data
+    state: directory
+    owner: "65534"
+    group: "65534"
+    mode: "0750"
+
+- name: Deploy ZeroClaw Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: /opt/services/zeroclaw/compose.yml
+    mode: "0644"
+
+- name: Start ZeroClaw
+  community.docker.docker_compose_v2:
+    project_src: /opt/services/zeroclaw
+    state: present
