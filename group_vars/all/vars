@@ -1,0 +1,2 @@
+ssh_public_key: "~/.ssh/mikrus.pub"
+zeroclaw_openrouter_api_key: "{{ vault_zeroclaw_openrouter_api_key }}"

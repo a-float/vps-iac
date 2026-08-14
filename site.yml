@@ -3,5 +3,7 @@
   become: true
 
   roles:
+    - base
     - docker
+    - tailscale
     - zeroclaw

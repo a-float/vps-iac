@@ -18,6 +18,16 @@
     dest: /opt/services/zeroclaw/compose.yml
     mode: "0644"
 
+# Remember to add the folowing configs to make make it work with standalone image + host ui locally
+# [runtime]
+# kind = "docker"
+
+# [gateway]
+# host = "0.0.0.0"
+# port = 42617
+# allow_public_bind = true
+# require_pairing = true
+
 - name: Start ZeroClaw
   community.docker.docker_compose_v2:
     project_src: /opt/services/zeroclaw

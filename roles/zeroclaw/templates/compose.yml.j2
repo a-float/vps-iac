@@ -9,3 +9,6 @@ services:
 
     volumes:
       - ./data:/zeroclaw-data
+
+    environment:
+      OPENROUTER_API_KEY: "{{ zeroclaw_openrouter_api_key }}"
