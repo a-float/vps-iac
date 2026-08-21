@@ -12,4 +12,12 @@
   scripts.ansible-play.exec = ''
     ansible-playbook -i inventory/hosts.yml site.yml
   '';
+
+  pre-commit.hooks.ansible-vault-encrypted = {
+    enable = true;
+    name = "check Ansible vault encryption";
+    entry = "grep -q '^\\$ANSIBLE_VAULT;'";
+    files = "^group_vars/all/vault$";
+    language = "system";
+  };
 }
