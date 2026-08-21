@@ -1,2 +1,6 @@
 ssh_public_key: "~/.ssh/mikrus.pub"
-zeroclaw_openrouter_api_key: "{{ vault_zeroclaw_openrouter_api_key }}"
+openrouter_api_key: "{{ vault_openrouter_api_key }}"
+token_issue_secret: "{{ vault_token_issue_secret }}"
+
+nanobot_image: "docker.io/afloaty/nanobot:latest"
+nanobot_uid: 1000

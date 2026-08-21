@@ -1,0 +1,39 @@
+- name: Create Nanobot directory
+  ansible.builtin.file:
+    path: /opt/nanobot
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create Nanobot data directory
+  ansible.builtin.file:
+    path: /opt/nanobot/.nanobot
+    state: directory
+    owner: "{{ nanobot_uid }}"
+    group: "{{ nanobot_uid }}"
+    mode: "0700"
+
+- name: Render Nanobot configuration
+  ansible.builtin.template:
+    src: config.json.j2
+    dest: /opt/nanobot/.nanobot/config.json
+    owner: "{{ nanobot_uid }}"
+    group: "{{ nanobot_uid }}"
+    mode: "0600"
+
+- name: Render Nanobot Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: /opt/nanobot/compose.yml
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Pull and start Nanobot
+  community.docker.docker_compose_v2:
+    project_src: /opt/nanobot
+    files:
+      - compose.yml
+    state: present
+    pull: always
