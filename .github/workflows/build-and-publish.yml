@@ -28,6 +28,9 @@ jobs:
         username: afloaty
         password: ${{ secrets.DOCKERHUB_TOKEN }}
     
-    - name: Build and push Docker images
+    - name: Build Docker images
       run: |
-        make build-image push-image
+        make build-image
+    - name: Push Docker images
+      run: |
+        make push-image

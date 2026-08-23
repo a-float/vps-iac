@@ -7,16 +7,33 @@
 NANOBOT_SHA := $(shell git -C submodules/nanobot rev-parse --short=12 HEAD)
 CUSTOM_SHA := $(shell git -C . rev-parse --short=12 HEAD)
 
+.DOCKER_LOGIN := false
+
 .PHONY: build-image push-image help
 
-# Build the docker images using the shared build-image.sh script
-# --build-only flag prevents pushing, so make push-image can push later
+# Build the docker images
 build-image: ## Build the docker images
-	@bash nanobot-image/build-image.sh --build-only
+	@echo "Building base image nanobot-base:${NANOBOT_SHA}"
+	@docker build \
+		--build-arg NANOBOT_CHANNELS="${NANOBOT_CHANNELS:-whatsapp}" \
+		--build-arg NANOBOT_EXTRAS="${NANOBOT_EXTRAS:-}" \
+		-f "submodules/nanobot/Dockerfile" \
+		-t "nanobot-base:${NANOBOT_SHA}" \
+		"submodules/nanobot"
+	@echo "Building custom image"
+	@docker build \
+		--build-arg NANOBOT_BASE_IMAGE="nanobot-base:${NANOBOT_SHA}" \
+		-f "nanobot-image/Dockerfile" \
+		-t "docker.io/afloaty/nanobot:nanobot-${NANOBOT_SHA}-custom-${CUSTOM_SHA}" \
+		-t "docker.io/afloaty/nanobot:latest" \
+		"nanobot-image"
 
 # Push the built docker images
 push-image: ## Push the built docker images
-	@bash nanobot-image/build-image.sh
+	@if [ "${DOCKERHUB_TOKEN}" = "" ]; then echo "DOCKERHUB_TOKEN not set, skipping push"; else \
+		docker login --username afloaty --password "${DOCKERHUB_TOKEN}" docker.io; fi
+	@docker push "docker.io/afloaty/nanobot:nanobot-${NANOBOT_SHA}-custom-${CUSTOM_SHA}"
+	@docker push "docker.io/afloaty/nanobot:latest"
 
 # Show this help
 help: ## Show this help
