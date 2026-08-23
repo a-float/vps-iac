@@ -1,9 +1,11 @@
 - name: Configure VPS
   hosts: all
+  # TODO don't run everything as root? Use the admin user?
   become: true
 
   roles:
-    - base
-    - docker
-    - tailscale
-    - nanobot
+    # - base
+    # - docker
+    # - tailscale
+    # - nanobot
+    - backup

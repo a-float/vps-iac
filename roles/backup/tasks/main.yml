@@ -1,0 +1,61 @@
+# https://wiki.mikr.us/strych_backupy/
+- name: Install rsnappush dependencies
+  ansible.builtin.apt:
+    name:
+      - acl
+      - rsync
+    state: present
+    update_cache: true
+
+- name: Install rsnappush
+  ansible.builtin.get_url:
+    url: https://mikr.us/tools/rsnappush
+    dest: /usr/local/bin/rsnappush
+    mode: "0755"
+
+- name: Configure SSH for backup server
+  ansible.builtin.copy:
+    dest: ~/.ssh/config
+    mode: "0600"
+    content: |
+      Host strych.mikr.us
+        User eve249
+        Port 10249
+        IdentityFile /backup_key
+        IdentitiesOnly yes
+
+# - name: Create daily nanobot backup service
+#   ansible.builtin.copy:
+#     dest: /etc/systemd/system/nanobot-backup.service
+#     mode: "0644"
+#     content: |
+#       [Unit]
+#       Description=Backup /opt/nanobot with rsnappush
+#       After=network-online.target
+#       Wants=network-online.target
+
+#       [Service]
+#       Type=oneshot
+#       ExecStart=/usr/local/bin/rsnappush /opt/nanobot strych.mikr.us:~/backups/nanobot/
+
+# - name: Create daily nanobot backup timer
+#   ansible.builtin.copy:
+#     dest: /etc/systemd/system/nanobot-backup.timer
+#     mode: "0644"
+#     content: |
+#       [Unit]
+#       Description=Daily nanobot backup
+
+#       [Timer]
+#       OnCalendar=*-*-* 03:00:00
+#       Persistent=true
+
+#       [Install]
+#       WantedBy=timers.target
+
+# - name: Enable and start nanobot backup timer
+#   ansible.builtin.systemd:
+#     name: nanobot-backup.timer
+#     enabled: true
+#     state: started
+#     daemon_reload: true
