@@ -23,10 +23,10 @@ build-image: ## Build the docker images
 	@echo "Building custom image"
 	@docker build \
 		--build-arg NANOBOT_BASE_IMAGE="nanobot-base:${NANOBOT_SHA}" \
-		-f "nanobot-image/Dockerfile" \
+		-f "Dockerfile" \
 		-t "docker.io/afloaty/nanobot:nanobot-${NANOBOT_SHA}-custom-${CUSTOM_SHA}" \
 		-t "docker.io/afloaty/nanobot:latest" \
-		"nanobot-image"
+		".
 
 # Push the built docker images
 push-image: ## Push the built docker images

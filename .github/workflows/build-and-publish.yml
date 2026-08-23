@@ -5,12 +5,12 @@ on:
     branches: [ main ]
     paths:
       - 'submodules/nanobot/**'
-      - 'nanobot-image/**'
+      - 'Dockerfile'
   workflow_dispatch:
 
 jobs:
   build-and-publish:
-    if: github.event_path && (github.event.changed.paths == 'submodules/nanobot/**' || github.event.changed.paths == 'nanobot-image/**')
+    if: github.event_path && (github.event.changed.paths == 'submodules/nanobot/**' || github.event.changed.paths == 'Dockerfile')
     runs-on: ubuntu-latest
     
     steps:
