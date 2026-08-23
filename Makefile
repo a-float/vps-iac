@@ -11,7 +11,6 @@ CUSTOM_SHA := $(shell git -C . rev-parse --short=12 HEAD)
 
 .PHONY: build-image push-image help
 
-# Build the docker images
 build-image: ## Build the docker images
 	@echo "Building base image nanobot-base:${NANOBOT_SHA}"
 	@docker build \
@@ -26,15 +25,11 @@ build-image: ## Build the docker images
 		-f "Dockerfile" \
 		-t "docker.io/afloaty/nanobot:nanobot-${NANOBOT_SHA}-custom-${CUSTOM_SHA}" \
 		-t "docker.io/afloaty/nanobot:latest" \
-		".
+		.
 
-# Push the built docker images
 push-image: ## Push the built docker images
-	@if [ "${DOCKERHUB_TOKEN}" = "" ]; then echo "DOCKERHUB_TOKEN not set, skipping push"; else \
-		docker login --username afloaty --password "${DOCKERHUB_TOKEN}" docker.io; fi
 	@docker push "docker.io/afloaty/nanobot:nanobot-${NANOBOT_SHA}-custom-${CUSTOM_SHA}"
 	@docker push "docker.io/afloaty/nanobot:latest"
 
-# Show this help
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "} {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
