@@ -7,6 +7,13 @@ NANOBOT="$ROOT/submodules/nanobot"
 : "${DOCKERHUB_USERNAME:?Set DOCKERHUB_USERNAME}"
 : "${DOCKERHUB_REPOSITORY:?Set DOCKERHUB_REPOSITORY}"
 
+BUILD_ONLY=false
+for arg in "$@"; do
+  if [[ "$arg" == "--build-only" ]]; then
+    BUILD_ONLY=true
+  fi
+done
+
 UPSTREAM_SHA="$(git -C "$NANOBOT" rev-parse --short=12 HEAD)"
 CUSTOM_SHA="$(git -C "$ROOT" rev-parse --short=12 HEAD)"
 
@@ -43,6 +50,7 @@ docker build \
   -t "$FINAL_IMAGE_LATEST" \
   "$ROOT/nanobot-image"
 
+if [[ "$BUILD_ONLY" != "true" ]]; then
 echo
 echo "==> Pushing custom Nanobot image:"
 
@@ -56,3 +64,4 @@ echo
 echo "  ${FINAL_IMAGE_VERSION}"
 echo "  ${FINAL_IMAGE_LATEST}"
 echo "=========================================="
+fi
