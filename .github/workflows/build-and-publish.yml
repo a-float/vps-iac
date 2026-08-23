@@ -3,10 +3,14 @@ name: Build and Publish Docker Images
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'submodules/nanobot/**'
+      - 'nanobot-image/**'
   workflow_dispatch:
 
 jobs:
   build-and-publish:
+    if: github.event_path && (github.event.changed.paths == 'submodules/nanobot/**' || github.event.changed.paths == 'nanobot-image/**')
     runs-on: ubuntu-latest
     
     steps:
