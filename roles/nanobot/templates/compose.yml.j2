@@ -25,6 +25,9 @@ services:
       - 127.0.0.1:18790:18790
       - 8765:8765
       - 8080:8080
+    environment:
+      GH_TOKEN: {{ github_token }}
+    
 
   # TODO figure out if I need it
   {# nanobot-api:

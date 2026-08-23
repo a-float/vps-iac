@@ -4,9 +4,10 @@ FROM ${NANOBOT_BASE_IMAGE}
 
 USER root
 
-# TODO install curl and htop?
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gh \
+    && apt-get install -y --no-install-recommends gh curl nano htop \
     && rm -rf /var/lib/apt/lists/*
+
+RUN gh auth setup-git
 
 USER root

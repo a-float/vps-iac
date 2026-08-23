@@ -1,6 +1,7 @@
 ssh_public_key: "~/.ssh/mikrus.pub"
 openrouter_api_key: "{{ vault_openrouter_api_key }}"
 token_issue_secret: "{{ vault_token_issue_secret }}"
+github_token: "{{ vault_github_token }}"
 
 nanobot_image: "docker.io/afloaty/nanobot:latest"
 nanobot_uid: 1000
