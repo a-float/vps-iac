@@ -1,29 +1,46 @@
-- name: Install required packages
-  ansible.builtin.apt:
-    name:
-      - ca-certificates
-      - curl
-      - gnupg
-    state: present
-    update_cache: true
+- name: Check if Docker is installed
+  command: docker -v
+  register: docker_installed
+  ignore_errors: true
 
 - name: Install Docker
-  ansible.builtin.apt:
-    name:
-      - docker.io
-      - docker-compose-v2
-    state: present
-    update_cache: true
+  when: docker_installed.failed
+  block:
+    - name: Add Docker's official GPG key
+      ansible.builtin.shell:
+        cmd: |
+          sudo apt update
+          sudo apt install ca-certificates curl
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+    - name: Add the repository to Apt sources
+      ansible.builtin.shell:
+        cmd: |
+          sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+          Types: deb
+          URIs: https://download.docker.com/linux/debian
+          Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
+          Components: stable
+          Architectures: $(dpkg --print-architecture)
+          Signed-By: /etc/apt/keyrings/docker.asc
+          EOF
+          sudo apt update
+
+    - name: Install Docker packages
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: latest
+        update_cache: true
 
 - name: Enable Docker
   ansible.builtin.systemd:
     name: docker
     enabled: true
     state: started
-
-- name: Add admin user to docker group
-  ansible.builtin.user:
-    name: admin
-    groups:
-      - docker
-    append: true

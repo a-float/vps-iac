@@ -1,6 +1,12 @@
+- name: Download Tailscale installer
+  ansible.builtin.get_url:
+    url: https://tailscale.com/install.sh
+    dest: /tmp/tailscale-install.sh
+    mode: "0755"
+
 - name: Install Tailscale
-  ansible.builtin.shell:
-    cmd: curl -fsSL https://tailscale.com/install.sh | sh
+  ansible.builtin.command:
+    cmd: /tmp/tailscale-install.sh
     creates: /usr/bin/tailscale
 
 - name: Ensure tailscaled is running
@@ -8,3 +14,6 @@
     name: tailscaled
     enabled: true
     state: started
+
+#
+#  Manually run `tailscale up`and login
