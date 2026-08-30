@@ -21,8 +21,8 @@ http://{{ internal_domain }}, http://*.{{ internal_domain }} {
                 reverse_proxy dozzle:8080
         }
 
-        @nanboto host nanobot.{{ internal_domain }}
-        handle @nanboto {
+        @nanobot host nanobot.{{ internal_domain }}
+        handle @nanobot {
                 reverse_proxy nanobot-gateway:8765
         }
 
