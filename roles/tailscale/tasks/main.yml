@@ -26,8 +26,7 @@
   become: true
   changed_when: true
   when: (tailscale_status.stdout | from_json).BackendState == "NeedsLogin"
-  ansible.builtin.command:
-    cmd: tailscale up --auth-key=$TS_AUTH_KEY
+  ansible.builtin.command: tailscale up --auth-key=$TS_AUTH_KEY
   environment:
     TS_AUTH_KEY: "{{ tailscale_auth_key }}"
   no_log: true
