@@ -5,3 +5,9 @@ github_token: "{{ vault_github_token }}"
 
 nanobot_image: "docker.io/afloaty/nanobot:latest"
 nanobot_uid: 1000
+
+beszel_token: "{{ vault_beszel_token }}"
+beszel_key: "{{ vault_beszel_key }}"
+
+tailscale_auth_key: "{{ vault_tailscale_auth_key }}"
+internal_domain: mati.local

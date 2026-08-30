@@ -1,6 +1,12 @@
+- name: Download Tailscale installer
+  ansible.builtin.get_url:
+    url: https://tailscale.com/install.sh
+    dest: /tmp/tailscale-install.sh
+    mode: "0755"
+
 - name: Install Tailscale
-  ansible.builtin.shell:
-    cmd: curl -fsSL https://tailscale.com/install.sh | sh
+  ansible.builtin.command:
+    cmd: /tmp/tailscale-install.sh
     creates: /usr/bin/tailscale
 
 - name: Ensure tailscaled is running
@@ -8,3 +14,19 @@
     name: tailscaled
     enabled: true
     state: started
+
+- name: Check Tailscale status
+  ansible.builtin.command: tailscale status --json
+  register: tailscale_status
+  changed_when: false
+  failed_when: false
+
+#  TODO test it
+- name: Authenticate Tailscale
+  become: true
+  changed_when: true
+  when: (tailscale_status.stdout | from_json).BackendState == "NeedsLogin"
+  ansible.builtin.command: tailscale up --auth-key=$TS_AUTH_KEY
+  environment:
+    TS_AUTH_KEY: "{{ tailscale_auth_key }}"
+  no_log: true

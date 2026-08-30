@@ -3,7 +3,9 @@
   become: true
 
   roles:
-    - base
+    # - base
     - docker
     - tailscale
     - nanobot
+    - monitoring
+    - gateway

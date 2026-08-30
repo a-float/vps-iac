@@ -1,0 +1,23 @@
+- name: Create monitoring directory
+  ansible.builtin.file:
+    path: /opt/monitoring
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Render monitoring compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: /opt/monitoring/compose.yml
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Pull and start monitoring
+  community.docker.docker_compose_v2:
+    project_src: /opt/monitoring
+    files:
+      - compose.yml
+    state: present
+    pull: always

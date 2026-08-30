@@ -1,0 +1,52 @@
+- name: Create gateway directory
+  ansible.builtin.file:
+    path: /opt/gateway
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Render gateway compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: /opt/gateway/compose.yml
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Render Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: /opt/gateway/caddy/conf/Caddyfile
+    owner: root
+    group: root
+    mode: "0644"
+  register: caddyfile_result
+
+- name: Render DNS config
+  ansible.builtin.template:
+    src: dns.conf.j2
+    dest: /opt/gateway/dnsmasq.d/local.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Render landing page
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /opt/gateway/caddy/site/internal/index.html
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Pull and start gateway
+  community.docker.docker_compose_v2:
+    project_src: /opt/gateway
+    files:
+      - compose.yml
+    state: present
+    pull: always
+
+- name: Reload Caddy
+  ansible.builtin.command: docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+  when: caddyfile_result.changed

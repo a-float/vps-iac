@@ -1,0 +1,31 @@
+http:// {
+        respond "Caddy works!"
+}
+
+http://localhost {
+        respond "Local Caddy works!"
+}
+
+http://zmati.tojest.dev {
+        respond "Domain Caddy works!"
+}
+
+http://{{ internal_domain }}, http://*.{{ internal_domain }} {
+        @beszel host beszel.{{ internal_domain }}
+        handle @beszel {
+                reverse_proxy beszel:8090
+        }
+
+        @dozzle host dozzle.{{ internal_domain }}
+        handle @dozzle {
+                reverse_proxy dozzle:8080
+        }
+
+        @nanobot host nanobot.{{ internal_domain }}
+        handle @nanobot {
+                reverse_proxy nanobot-gateway:8765
+        }
+
+        root /srv/internal
+        file_server
+}
