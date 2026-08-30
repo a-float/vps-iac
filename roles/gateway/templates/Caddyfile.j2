@@ -10,18 +10,18 @@ http://zmati.tojest.dev {
         respond "Domain Caddy works!"
 }
 
-http://*.mati.local {
-        @beszel host beszel.mati.local
+http://{{ internal_domain }}, http://*.{{ internal_domain }} {
+        @beszel host beszel.{{ internal_domain }}
         handle @beszel {
                 reverse_proxy beszel:8090
         }
 
-        @dozzle host dozzle.mati.local
+        @dozzle host dozzle.{{ internal_domain }}
         handle @dozzle {
                 reverse_proxy dozzle:8080
         }
 
-        @nanboto host nanobot.mati.local
+        @nanboto host nanobot.{{ internal_domain }}
         handle @nanboto {
                 reverse_proxy nanobot-gateway:8765
         }

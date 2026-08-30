@@ -4,8 +4,7 @@ services:
     container_name: beszel
     restart: unless-stopped
     environment:
-      {# TODO move the domain to ansible var #}
-      APP_URL: http://beszel.mati.local
+      APP_URL: {{ 'http://beszel.' ~ internal_domain }}
     expose:
       - "8090"
     volumes:

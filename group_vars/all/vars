@@ -10,3 +10,4 @@ beszel_token: "{{ vault_beszel_token }}"
 beszel_key: "{{ vault_beszel_key }}"
 
 tailscale_auth_key: "{{ vault_tailscale_auth_key }}"
+internal_domain: mati.local
