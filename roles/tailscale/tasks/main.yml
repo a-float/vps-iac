@@ -15,5 +15,19 @@
     enabled: true
     state: started
 
-#
-#  Manually run `tailscale up`and login
+- name: Check Tailscale status
+  ansible.builtin.command: tailscale status --json
+  register: tailscale_status
+  changed_when: false
+  failed_when: false
+
+#  TODO test it
+- name: Authenticate Tailscale
+  become: true
+  changed_when: true
+  when: (tailscale_status.stdout | from_json).BackendState == "NeedsLogin"
+  ansible.builtin.command:
+    cmd: tailscale up --auth-key=$TS_AUTH_KEY
+  environment:
+    TS_AUTH_KEY: "{{ tailscale_auth_key }}"
+  no_log: true
