@@ -44,3 +44,7 @@
     name: docker
     enabled: true
     state: started
+
+- name: Create gateway network
+  community.docker.docker_network:
+    name: gateway

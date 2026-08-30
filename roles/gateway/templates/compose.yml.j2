@@ -1,0 +1,28 @@
+services:
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./caddy/conf:/etc/caddy
+      - ./caddy/site:/srv
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+    networks:
+      - gateway
+
+  dnsmasq:
+    image: dockurr/dnsmasq
+    container_name: dnsmasq
+    ports:
+      - 53:53/udp
+      - 53:53/tcp
+    restart: unless-stopped
+    volumes:
+      - ./dnsmasq.d/:/etc/dnsmasq.d/
+
+networks:
+  gateway:
+    external: true
