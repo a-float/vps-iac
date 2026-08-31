@@ -16,7 +16,7 @@ services:
       resources:
         limits:
           cpus: '0.50'
-          memory: 512M
+          memory: 64M
 
   dnsmasq:
     image: dockurr/dnsmasq
@@ -31,7 +31,7 @@ services:
       resources:
         limits:
           cpus: '0.10'
-          memory: 128M
+          memory: 2M
 
 networks:
   gateway:
