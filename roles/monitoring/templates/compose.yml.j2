@@ -16,7 +16,7 @@ services:
       resources:
         limits:
           cpus: '0.25'
-          memory: 32M
+          memory: 64M
 
   beszel-agent:
     image: henrygd/beszel-agent:latest
@@ -35,7 +35,7 @@ services:
       resources:
         limits:
           cpus: '0.10'
-          memory: 32M
+          memory: 16M
 
   dozzle:
     image: amir20/dozzle:latest
