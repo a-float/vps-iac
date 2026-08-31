@@ -12,6 +12,11 @@ services:
       - ./beszel/socket:/beszel_socket
     networks:
       - gateway
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
 
   beszel-agent:
     image: henrygd/beszel-agent:latest
@@ -26,6 +31,11 @@ services:
       LISTEN: /beszel_socket/beszel.sock
       TOKEN: {{ beszel_token }}
       KEY: {{ beszel_key }}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 16M
 
   dozzle:
     image: amir20/dozzle:latest
@@ -40,6 +50,11 @@ services:
       DOZZLE_HOSTNAME: my-vps
     networks:
       - gateway
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
 
 networks:
   gateway:

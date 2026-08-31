@@ -14,12 +14,17 @@ x-common-config: &common-config
   # binaries or file capabilities left inside the container image.
   security_opt:
     - no-new-privileges:true
+  deploy:
+
 
 
 services:
   nanobot-gateway:
     container_name: nanobot-gateway
-    <<: *common-config
+    deploy:
+      resources:
+        limits:
+          memory: 300M
     command: ["gateway"]
     restart: unless-stopped
     expose:
@@ -51,6 +56,7 @@ services:
     command: ["status"]
     stdin_open: true
     tty: true
+
 
 networks:
   gateway:

@@ -12,6 +12,11 @@ services:
       - ./caddy/config:/config
     networks:
       - gateway
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 64M
 
   dnsmasq:
     image: dockurr/dnsmasq
@@ -22,6 +27,11 @@ services:
     restart: unless-stopped
     volumes:
       - ./dnsmasq.d/:/etc/dnsmasq.d/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 2M
 
 networks:
   gateway:
