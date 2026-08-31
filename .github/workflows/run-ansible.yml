@@ -17,12 +17,8 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-      - name: Add SSH private key
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.ANSIBLE_SSH_KEY }}
-        run: |
-          echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_mikrus
-          chmod 600 ~/.ssh/id_mikrus
       - name: Run Ansible playbook
         run: |
-          ansible-playbook -i inventory/hosts.yml site.yml
+          ansible-playbook \
+            --private-key="${{ secrets.ANSIBLE_SSH_KEY }}" \
+            -i inventory/hosts.yml site.yml
