@@ -15,12 +15,14 @@ jobs:
         with:
           submodules: recursive
       - name: Set up SSH known hosts and verify host key
-        run: |
+        run: | set -euo pipefail
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo "${{ secrets.VPS_HOST_SSH_KEY }}" > ~/.ssh/tmp_key
-          chmod 600 ~/.ssh/tmp_key
+          printf "%s" "${{ secrets.VPS_HOST_SSH_KEY }}" > ~/.ssh/ansible_key
+          chmod 600 ~/.ssh/ansible_key
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          # Store trusted host key directly
+          ssh-keygen -F "${{ secrets.VPS_HOST }}" -f ~/.ssh/known_hosts || true
           # Verify SSH host key fingerprint
           EXPECTED_FP="${{ secrets.VPS_HOST_KEY_FINGERPRINT }}"
           ACTUAL_FP=$(ssh-keygen -l -F "${{ secrets.VPS_HOST }}" ~/.ssh/known_hosts | awk '{print $2}')
@@ -29,11 +31,10 @@ jobs:
             exit 1
           fi
       - name: Run Ansible playbook
-        run: |
+        run: | set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/tmp_key
-          chmod 600 ~/.ssh/tmp_key
+          printf "%s" "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/ansible_key
+          chmod 600 ~/.ssh/ansible_key
           ansible-playbook \
-            --private-key="$HOME/.ssh/tmp_key" \
+            --private-key="$HOME/.ssh/ansible_key" \
             -i inventory/hosts.yml site.yml
-          rm -f ~/.ssh/tmp_key
