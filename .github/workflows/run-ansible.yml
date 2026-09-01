@@ -1,8 +1,6 @@
 name: Run Ansible Playbook
 
 on:
-  # push:
-  #   branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -20,6 +18,7 @@ jobs:
       - name: Configure SSH
         env:
           VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_SSH_PORT: ${{ vars.VPS_SSH_PORT }}
           VPS_HOST_KEY_FINGERPRINT: ${{ vars.VPS_HOST_KEY_FINGERPRINT }}
           ANSIBLE_SSH_KEY: ${{ secrets.ANSIBLE_SSH_KEY }}
         run: |
@@ -28,7 +27,7 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$ANSIBLE_SSH_KEY" > ~/.ssh/ansible_key
           chmod 600 ~/.ssh/ansible_key
-          ssh-keyscan -H "$VPS_HOST" > ~/.ssh/known_hosts
+          ssh-keyscan -p "$VPS_SSH_PORT" -H "$VPS_HOST" > ~/.ssh/known_hosts
           test "$(ssh-keygen -lf ~/.ssh/known_hosts | awk 'NR==1 {print $2}')" = "$VPS_HOST_KEY_FINGERPRINT"
 
       - name: Run Ansible
@@ -36,4 +35,5 @@ jobs:
           ansible-playbook \
             --private-key="$HOME/.ssh/ansible_key" \
             -i inventory/hosts.yml \
+            -e "ansible_port=${{ vars.VPS_SSH_PORT }}" \
             site.yml
