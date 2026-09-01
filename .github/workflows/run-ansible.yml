@@ -1,0 +1,39 @@
+name: Run Ansible Playbook
+
+on:
+  # push:
+  #   branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_HOST_KEY_FINGERPRINT: ${{ vars.VPS_HOST_KEY_FINGERPRINT }}
+          ANSIBLE_SSH_KEY: ${{ secrets.ANSIBLE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$ANSIBLE_SSH_KEY" > ~/.ssh/ansible_key
+          chmod 600 ~/.ssh/ansible_key
+          ssh-keyscan -H "$VPS_HOST" > ~/.ssh/known_hosts
+          test "$(ssh-keygen -lf ~/.ssh/known_hosts | awk 'NR==1 {print $2}')" = "$VPS_HOST_KEY_FINGERPRINT"
+
+      - name: Run Ansible
+        run: |
+          ansible-playbook \
+            --private-key="$HOME/.ssh/ansible_key" \
+            -i inventory/hosts.yml \
+            site.yml
