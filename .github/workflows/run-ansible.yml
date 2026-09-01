@@ -4,37 +4,35 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
-  run-ansible:
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - name: Set up SSH known hosts and verify host key
-        run: | set -euo pipefail
+
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_HOST_KEY_FINGERPRINT: ${{ vars.VPS_HOST_KEY_FINGERPRINT }}
+          ANSIBLE_SSH_KEY: ${{ secrets.ANSIBLE_SSH_KEY }}
+        run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf "%s" "${{ secrets.VPS_HOST_SSH_KEY }}" > ~/.ssh/ansible_key
+          printf '%s\n' "$ANSIBLE_SSH_KEY" > ~/.ssh/ansible_key
           chmod 600 ~/.ssh/ansible_key
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-          # Store trusted host key directly
-          ssh-keygen -F "${{ secrets.VPS_HOST }}" -f ~/.ssh/known_hosts || true
-          # Verify SSH host key fingerprint
-          EXPECTED_FP="${{ secrets.VPS_HOST_KEY_FINGERPRINT }}"
-          ACTUAL_FP=$(ssh-keygen -l -F "${{ secrets.VPS_HOST }}" ~/.ssh/known_hosts | awk '{print $2}')
-          if [ "$ACTUAL_FP" != "$EXPECTED_FP" ]; then
-            echo "SSH host key verification failed"
-            exit 1
-          fi
-      - name: Run Ansible playbook
-        run: | set -euo pipefail
-          mkdir -p ~/.ssh
-          printf "%s" "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/ansible_key
-          chmod 600 ~/.ssh/ansible_key
+          ssh-keyscan -H "$VPS_HOST" > ~/.ssh/known_hosts
+          test "$(ssh-keygen -lf ~/.ssh/known_hosts | awk 'NR==1 {print $2}')" = "$VPS_HOST_KEY_FINGERPRINT"
+
+      - name: Run Ansible
+        run: |
           ansible-playbook \
             --private-key="$HOME/.ssh/ansible_key" \
-            -i inventory/hosts.yml site.yml
+            -i inventory/hosts.yml \
+            site.yml
