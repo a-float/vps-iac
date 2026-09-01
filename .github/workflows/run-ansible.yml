@@ -17,9 +17,9 @@ jobs:
 
       - name: Configure SSH
         env:
-          VPS_HOST: ${{ vars.VPS_HOST }}
-          VPS_SSH_PORT: ${{ vars.VPS_SSH_PORT }}
-          VPS_HOST_KEY_FINGERPRINT: ${{ vars.VPS_HOST_KEY_FINGERPRINT }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
+          VPS_HOST_KEY_FINGERPRINT: ${{ secrets.VPS_HOST_KEY_FINGERPRINT }}
           ANSIBLE_SSH_KEY: ${{ secrets.ANSIBLE_SSH_KEY }}
         run: |
           set -euo pipefail
