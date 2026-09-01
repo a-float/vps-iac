@@ -2,9 +2,8 @@ x-common-config: &common-config
   image: "{{ nanobot_image }}"
   volumes:
     - /opt/nanobot/.nanobot:/home/nanobot/.nanobot
-  # Temporarily disabled for easier setup
-  # cap_drop:
-  #  - ALL
+  cap_drop:
+    - ALL
   # Entrypoint uses these to fix bind-mount ownership and drop to the nanobot user.
   cap_add:
     - CHOWN
@@ -14,40 +13,22 @@ x-common-config: &common-config
   # binaries or file capabilities left inside the container image.
   security_opt:
     - no-new-privileges:true
-  deploy:
-
-
 
 services:
   nanobot-gateway:
     container_name: nanobot-gateway
-    deploy:
-      resources:
-        limits:
-          memory: 300M
     command: ["gateway"]
     restart: unless-stopped
     expose:
       - "8765"
-    ports:
-      # Are these ports still neded? Especially the 8080
-      - 127.0.0.1:18790:18790
-      # - 8080:8080
     environment:
       GH_TOKEN: {{ github_token }}
     networks:
       - gateway
-    
-
-  # TODO figure out if I need it
-  {# nanobot-api:
-    container_name: nanobot-api
-    <<: *common-config
-    command:
-      ["serve", "--host", "0.0.0.0", "-w", "/home/nanobot/.nanobot/api-workspace"]
-    restart: unless-stopped
-    ports:
-      - 127.0.0.1:8900:8900 #}
+    deploy:
+      resources:
+        limits:
+          memory: 300M
 
   nanobot-cli:
     <<: *common-config
