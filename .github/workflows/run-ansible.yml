@@ -7,13 +7,13 @@ on:
 jobs:
   run-ansible:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.5.0
+        uses: actions/checkout@v6
         with:
           submodules: recursive
-        permissions:
-          contents: read
       - name: Set up SSH known hosts and verify host key
         run: |
           mkdir -p ~/.ssh
@@ -21,13 +21,19 @@ jobs:
           echo "${{ secrets.VPS_HOST_SSH_KEY }}" > ~/.ssh/tmp_key
           chmod 600 ~/.ssh/tmp_key
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-          rm -f ~/.ssh/tmp_key
+          # Verify SSH host key fingerprint
+          EXPECTED_FP="${{ secrets.VPS_HOST_KEY_FINGERPRINT }}"
+          ACTUAL_FP=$(ssh-keygen -l -F "${{ secrets.VPS_HOST }}" ~/.ssh/known_hosts | awk '{print $2}')
+          if [ "$ACTUAL_FP" != "$EXPECTED_FP" ]; then
+            echo "SSH host key verification failed"
+            exit 1
+          fi
       - name: Run Ansible playbook
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/tmp_key
           chmod 600 ~/.ssh/tmp_key
           ansible-playbook \
-            --private-key="~/.ssh/tmp_key" \
+            --private-key="$HOME/.ssh/tmp_key" \
             -i inventory/hosts.yml site.yml
           rm -f ~/.ssh/tmp_key
