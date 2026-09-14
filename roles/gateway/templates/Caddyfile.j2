@@ -26,6 +26,11 @@ http://{{ internal_domain }}, http://*.{{ internal_domain }} {
                 reverse_proxy nanobot-gateway:8765
         }
 
+        @netdata host netdata.{{ internal_domain }}
+        handle @netdata {
+                reverse_proxy host.docker.internal:19999
+        }
+
         root /srv/internal
         file_server
 }
