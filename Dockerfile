@@ -5,7 +5,7 @@ FROM ${NANOBOT_BASE_IMAGE}
 USER root
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gh curl nano htop \
+    && apt-get install -y --no-install-recommends gh curl nano htop tmux \
     && rm -rf /var/lib/apt/lists/*
 
 USER root
