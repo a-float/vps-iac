@@ -31,9 +31,17 @@ jobs:
           test "$(ssh-keygen -lf ~/.ssh/known_hosts | awk 'NR==1 {print $2}')" = "$VPS_HOST_KEY_FINGERPRINT"
 
       - name: Run Ansible
+        env:
+          VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+          VAULT_PASSWORD_FILE: ${{ runner.temp }}/ansible_vault_pass
         run: |
+          echo "$VAULT_PASSWORD" > "$VAULT_PASSWORD_FILE"
+          chmod 600 "$VAULT_PASSWORD_FILE"
+
           ansible-playbook \
             --private-key="$HOME/.ssh/ansible_key" \
+            --vault-password-file="$VAULT_PASSWORD_FILE" \
             -i inventory/hosts.yml \
-            -e "ansible_port=${{ vars.VPS_SSH_PORT }}" \
+            -e "ansible_host=${{ secrets.VPS_HOST }}" \
+            -e "ansible_port=${{ secrets.VPS_SSH_PORT }}" \
             site.yml
