@@ -26,6 +26,11 @@ http://{{ internal_domain }}, http://*.{{ internal_domain }} {
                 reverse_proxy nanobot-gateway:8765
         }
 
+        @dockhand host dockhand.{{ internal_domain }}
+        handle @dockhand {
+                reverse_proxy dockhand:3000
+        }
+
         root /srv/internal
         file_server
 }
