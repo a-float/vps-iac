@@ -21,6 +21,7 @@
     owner: "{{ nanobot_uid }}"
     group: "{{ nanobot_uid }}"
     mode: "0600"
+    force: false
 
 - name: Render Nanobot compose file
   ansible.builtin.template:
