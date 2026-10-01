@@ -1,6 +1,6 @@
 services:
   caddy:
-    image: caddy:2
+    image: caddy:2.11.4
     container_name: caddy
     restart: unless-stopped
     ports:
@@ -19,7 +19,7 @@ services:
           memory: 64M
 
   dnsmasq:
-    image: dockurr/dnsmasq
+    image: dockurr/dnsmasq:2
     container_name: dnsmasq
     ports:
       - 53:53/udp

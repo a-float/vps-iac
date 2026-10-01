@@ -1,6 +1,6 @@
 services:
   beszel:
-    image: henrygd/beszel:latest
+    image: henrygd/beszel:0.20.0
     container_name: beszel
     restart: unless-stopped
     environment:
@@ -19,7 +19,7 @@ services:
           memory: 64M
 
   beszel-agent:
-    image: henrygd/beszel-agent:latest
+    image: henrygd/beszel-agent:0.20.0
     container_name: beszel-agent
     restart: unless-stopped
     network_mode: host
@@ -38,7 +38,7 @@ services:
           memory: 16M
 
   dozzle:
-    image: amir20/dozzle:latest
+    image: amir20/dozzle:v11.1.3
     container_name: dozzle
     restart: unless-stopped
     volumes:
