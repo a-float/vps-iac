@@ -1,6 +1,6 @@
 services:
   dockhand:
-    image: fnsys/dockhand:latest
+    image: fnsys/dockhand:a72831ab
     container_name: dockhand
     restart: unless-stopped
     expose:
@@ -8,14 +8,14 @@ services:
     environment:
         FEAT_BACKUPS_ENABLED: true
         EXPORT_METRICS: true
+        FEAT_API_DOCS: true
+        # https://dockhand.pro/manual/#volume-path-mapping
+        DATA_DIR: /opt/dockhand
     networks:
       - gateway
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - dockhand_data:/app/data
-
-volumes:
-  dockhand_data:
+      - ./data:/opt/dockhand
 
 networks:
   gateway:
