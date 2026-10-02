@@ -31,6 +31,7 @@ services:
       LISTEN: /beszel_socket/beszel.sock
       TOKEN: {{ beszel_token }}
       KEY: {{ beszel_key }}
+      DOCKER_TIMEOUT: 5s
     deploy:
       resources:
         limits:
