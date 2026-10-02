@@ -37,4 +37,4 @@
     files:
       - compose.yml
     state: present
-    pull: always
+    pull: missing

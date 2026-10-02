@@ -1,4 +1,3 @@
----
 - name: Create Dockhand directory
   ansible.builtin.file:
     path: "/opt/dockhand"
@@ -21,4 +20,4 @@
     files:
       - compose.yml
     state: present
-    pull: always
+    pull: missing

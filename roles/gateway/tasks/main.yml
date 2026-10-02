@@ -57,7 +57,7 @@
     files:
       - compose.yml
     state: present
-    pull: always
+    pull: missing
 
 - name: Reload Caddy
   ansible.builtin.command: docker exec caddy caddy reload --config /etc/caddy/Caddyfile
