@@ -1,0 +1,27 @@
+services:
+  dockhand:
+    image: fnsys/dockhand:a72831ab
+    container_name: dockhand
+    restart: unless-stopped
+    expose:
+        - "3000"
+    environment:
+        FEAT_BACKUPS_ENABLED: true
+        EXPORT_METRICS: true
+        FEAT_API_DOCS: true
+        # https://dockhand.pro/manual/#volume-path-mapping
+        DATA_DIR: /opt/dockhand
+    networks:
+      - gateway
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/opt/dockhand
+    deploy:
+      resources:
+        limits:
+          cpus: '0.30'
+          memory: 256M
+
+networks:
+  gateway:
+    external: true

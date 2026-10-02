@@ -1,22 +1,22 @@
-- name: Create monitoring directory
+- name: Create Dockhand directory
   ansible.builtin.file:
-    path: /opt/monitoring
+    path: "/opt/dockhand"
     state: directory
     owner: root
     group: root
     mode: "0755"
 
-- name: Render monitoring compose file
+- name: Render Dockhand compose file
   ansible.builtin.template:
     src: compose.yml.j2
-    dest: /opt/monitoring/compose.yml
+    dest: "/opt/dockhand/compose.yml"
     owner: root
     group: root
     mode: "0644"
 
-- name: Pull and start monitoring
+- name: Start Dockhand
   community.docker.docker_compose_v2:
-    project_src: /opt/monitoring
+    project_src: "/opt/dockhand"
     files:
       - compose.yml
     state: present
