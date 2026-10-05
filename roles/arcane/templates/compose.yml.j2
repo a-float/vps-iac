@@ -1,7 +1,7 @@
 services:
-  dockhand:
-    image: fnsys/dockhand:a72831ab
-    container_name: dockhand
+  arcane:
+    image: fnsys/arcane:a72831ab
+    container_name: arcane
     restart: unless-stopped
     expose:
         - "3000"
@@ -9,13 +9,13 @@ services:
         FEAT_BACKUPS_ENABLED: true
         EXPORT_METRICS: true
         FEAT_API_DOCS: true
-        # https://dockhand.pro/manual/#volume-path-mapping
-        DATA_DIR: /opt/dockhand
+        # https://arcane.pro/manual/#volume-path-mapping
+        DATA_DIR: /opt/arcane
     networks:
       - gateway
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./data:/opt/dockhand
+      - ./data:/opt/arcane
     deploy:
       resources:
         limits:
