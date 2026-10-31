@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       needs-build: ${{ steps.filter.outputs.build }}
-      needs-deploy: ${{ steps.filter.outputs.deploy }}
+      needs-deploy: ${{ steps.set-deploy.outputs.deploy }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.5.0
@@ -51,26 +51,15 @@ jobs:
               - 'submodules/nanobot'
               - 'submodules/nanobot/**'
               - 'Dockerfile'
-            deploy:
-              - 'submodules/nanobot'
-              - 'submodules/nanobot/**'
-              - 'Dockerfile'
-              - 'roles/**'
-              - 'site.yml'
-              - 'inventory/**'
-              - 'requirements.yml'
-              - 'Makefile'
-              - '.github/workflows/deploy.yml'
 
-      - name: Handle manual dispatch
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          if [[ "${{ inputs.rebuild }}" == "true" ]]; then
-            echo "build=true" >> $GITHUB_OUTPUT
-            echo "deploy=true" >> $GITHUB_OUTPUT
-          else
-            echo "deploy=true" >> $GITHUB_OUTPUT
-          fi
+      - name: Set deploy output
+        id: set-deploy
+        run: echo "deploy=true" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Handle manual dispatch rebuild
+        if: github.event_name == 'workflow_dispatch' && inputs.rebuild == 'true'
+        run: echo "build=true" >> $GITHUB_OUTPUT
         shell: bash
 
   build-and-publish:
