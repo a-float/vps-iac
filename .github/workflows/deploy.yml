@@ -25,8 +25,6 @@ permissions:
 
 env:
   DOCKERHUB_USERNAME: afloaty
-  NANOBOT_CHANNELS: whatsapp
-  NANOBOT_EXTRAS: ""
 
 jobs:
   detect-changes:
@@ -58,13 +56,13 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED_FILES"
           
-          # Check if build is needed
+          # Build needed: submodules/nanobot/ or Dockerfile
           NEEDS_BUILD=false
           if echo "$CHANGED_FILES" | grep -qE '^(submodules/nanobot/|Dockerfile$)'; then
             NEEDS_BUILD=true
           fi
           
-          # Check if deploy is needed (any relevant change)
+          # Deploy needed: any relevant change (build paths + ansible paths)
           NEEDS_DEPLOY=false
           if echo "$CHANGED_FILES" | grep -qE '^(submodules/nanobot/|Dockerfile$|roles/|site\.yml$|inventory/|requirements\.yml$|Makefile$|\.github/workflows/deploy\.yml$)'; then
             NEEDS_DEPLOY=true
