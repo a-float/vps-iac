@@ -31,6 +31,11 @@ http://{{ internal_domain }}, http://*.{{ internal_domain }} {
                 reverse_proxy dockhand:3000
         }
 
+        @arcane host arcane.{{ internal_domain }}
+        handle @arcane {
+                reverse_proxy arcane:3552
+        }
+
         root /srv/internal
         file_server
 }

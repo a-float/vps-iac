@@ -8,5 +8,6 @@
     - tailscale
     - nanobot
     - monitoring
-    - dockhand
+    # - dockhand
+    - arcane
     - gateway
