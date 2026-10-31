@@ -59,17 +59,15 @@ jobs:
               - 'Makefile'
               - '.github/workflows/deploy.yml'
 
-      - name: Handle manual dispatch rebuild
-        if: github.event_name == 'workflow_dispatch' && inputs.rebuild == 'true'
+      - name: Handle manual dispatch
+        if: github.event_name == 'workflow_dispatch'
         run: |
-          echo "build=true" >> $GITHUB_OUTPUT
-          echo "deploy=true" >> $GITHUB_OUTPUT
-        shell: bash
-
-      - name: Handle manual dispatch no rebuild
-        if: github.event_name == 'workflow_dispatch' && inputs.rebuild == 'false'
-        run: |
-          echo "deploy=true" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.rebuild }}" == "true" ]]; then
+            echo "build=true" >> $GITHUB_OUTPUT
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          fi
         shell: bash
 
   build-and-publish:
