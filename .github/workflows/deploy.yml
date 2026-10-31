@@ -20,6 +20,11 @@ on:
         type: boolean
         default: false
         required: false
+      deploy:
+        description: "Run deployment after build (if any)"
+        type: boolean
+        default: true
+        required: false
 
 permissions:
   contents: read
@@ -54,7 +59,12 @@ jobs:
 
       - name: Set deploy output
         id: set-deploy
-        run: echo "deploy=true" >> $GITHUB_OUTPUT
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "deploy=${{ inputs.deploy }}" >> $GITHUB_OUTPUT
+          else
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          fi
         shell: bash
 
       - name: Handle manual dispatch rebuild
