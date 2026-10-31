@@ -26,6 +26,10 @@ on:
         default: true
         required: false
 
+concurrency:
+  group: deploy-vps-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -91,6 +95,8 @@ jobs:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # TODO: Consider docker/build-push-action@v5 with cache-from/to: type=gha for faster builds
+      # Requires switching from make build-image/push-image to the action
       - name: Build Docker images
         run: |
           make build-image
