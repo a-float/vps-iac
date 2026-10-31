@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "submodules/nanobot"
       - "submodules/nanobot/**"
       - "Dockerfile"
       - "roles/**"
@@ -47,9 +48,11 @@ jobs:
           list-files: shell
           filters: |
             build:
+              - 'submodules/nanobot'
               - 'submodules/nanobot/**'
               - 'Dockerfile'
             deploy:
+              - 'submodules/nanobot'
               - 'submodules/nanobot/**'
               - 'Dockerfile'
               - 'roles/**'
