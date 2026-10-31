@@ -1,0 +1,157 @@
+name: Deploy VPS Infrastructure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "submodules/nanobot/**"
+      - "Dockerfile"
+      - "roles/**"
+      - "site.yml"
+      - "inventory/**"
+      - "requirements.yml"
+      - "Makefile"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+    inputs:
+      rebuild:
+        description: "Force rebuild of Docker images before deploying"
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  DOCKERHUB_USERNAME: afloaty
+  NANOBOT_CHANNELS: whatsapp
+  NANOBOT_EXTRAS: ""
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      needs-build: ${{ steps.filter.outputs.needs-build }}
+      needs-deploy: ${{ steps.filter.outputs.needs-deploy }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.5.0
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Determine changed paths
+        id: filter
+        run: |
+          set -euo pipefail
+          
+          # Get changed files since last push to main (or all files for manual dispatch)
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # For manual dispatch, check all relevant paths
+            CHANGED_FILES=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || git ls-files)
+          else
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} 2>/dev/null || git ls-files)
+          fi
+          
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
+          # Check if build is needed
+          NEEDS_BUILD=false
+          if echo "$CHANGED_FILES" | grep -qE '^(submodules/nanobot/|Dockerfile$)'; then
+            NEEDS_BUILD=true
+          fi
+          
+          # Check if deploy is needed (any relevant change)
+          NEEDS_DEPLOY=false
+          if echo "$CHANGED_FILES" | grep -qE '^(submodules/nanobot/|Dockerfile$|roles/|site\.yml$|inventory/|requirements\.yml$|Makefile$|\.github/workflows/deploy\.yml$)'; then
+            NEEDS_DEPLOY=true
+          fi
+          
+          # Manual dispatch with rebuild forces build
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.rebuild }}" == "true" ]]; then
+            NEEDS_BUILD=true
+            NEEDS_DEPLOY=true
+          fi
+          
+          # Manual dispatch without rebuild still deploys
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.rebuild }}" == "false" ]]; then
+            NEEDS_DEPLOY=true
+          fi
+          
+          echo "needs-build=$NEEDS_BUILD" >> $GITHUB_OUTPUT
+          echo "needs-deploy=$NEEDS_DEPLOY" >> $GITHUB_OUTPUT
+          
+          echo "Build needed: $NEEDS_BUILD"
+          echo "Deploy needed: $NEEDS_DEPLOY"
+
+  build-and-publish:
+    name: Build and Publish Docker Images
+    needs: detect-changes
+    if: needs.detect-changes.outputs.needs-build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.5.0
+        with:
+          submodules: recursive
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker images
+        run: |
+          make build-image
+
+      - name: Push Docker images
+        run: |
+          make push-image
+
+  deploy:
+    name: Deploy to VPS
+    needs: [detect-changes, build-and-publish]
+    if: needs.detect-changes.outputs.needs-deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.5.0
+        with:
+          submodules: recursive
+
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
+          VPS_HOST_KEY_FINGERPRINT: ${{ secrets.VPS_HOST_KEY_FINGERPRINT }}
+          ANSIBLE_SSH_KEY: ${{ secrets.ANSIBLE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$ANSIBLE_SSH_KEY" > ~/.ssh/ansible_key
+          chmod 600 ~/.ssh/ansible_key
+          ssh-keyscan -p "$VPS_SSH_PORT" -t ed25519 -H "$VPS_HOST" > ~/.ssh/known_hosts
+          test "$(ssh-keygen -lf ~/.ssh/known_hosts | awk 'NR==1 {print $2}')" = "$VPS_HOST_KEY_FINGERPRINT"
+
+      - name: Run Ansible
+        env:
+          VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+          VAULT_PASSWORD_FILE: ${{ runner.temp }}/ansible_vault_pass
+        run: |
+          echo "$VAULT_PASSWORD" > "$VAULT_PASSWORD_FILE"
+          chmod 600 "$VAULT_PASSWORD_FILE"
+
+          ansible-playbook \
+            --private-key="$HOME/.ssh/ansible_key" \
+            --vault-password-file="$VAULT_PASSWORD_FILE" \
+            -i inventory/hosts.yml \
+            -e "ansible_host=${{ secrets.VPS_HOST }}" \
+            -e "ansible_port=${{ secrets.VPS_SSH_PORT }}" \
+            site.yml
