@@ -1,0 +1,100 @@
+```mermaid
+graph TB
+    subgraph "Host (VPS)"
+        direction TB
+        Config[/opt/nanobot/.nanobot/config.json/]
+        Workspace[/opt/nanobot/.nanobot/workspace/]
+        Sessions[/opt/nanobot/.nanobot/sessions/]
+        Auth[/opt/nanobot/.nanobot/auth/]
+        Media[/opt/nanobot/.nanobot/media/]
+    end
+
+    subgraph "Docker Container"
+        direction TB
+        Gateway[nanobot-gateway<br/>:18790 health, :8765 WebSocket]
+        CLI[nanobot-cli<br/>one-shot commands]
+    end
+
+    subgraph "External Services"
+        OpenRouter[OpenRouter API]
+        GitHub[GitHub API]
+        MCP_GH[GitHub MCP Server]
+        MCP_KG[Knowledge Graph MCP]
+    end
+
+    Config --> Gateway
+    Workspace --> Gateway
+    Sessions --> Gateway
+    Auth --> Gateway
+    Media --> Gateway
+
+    Gateway --> OpenRouter
+    Gateway --> GitHub
+    Gateway --> MCP_GH
+    Gateway --> MCP_KG
+
+    CLI --> Config
+    CLI --> Workspace
+    CLI --> Sessions
+
+    style Workspace fill:#e8f5e9
+    style Sessions fill:#fff3e0
+    style Auth fill:#fce4ec
+```
+
+```mermaid
+graph LR
+    subgraph "Agent Workspace (Identity & Memory)"
+        Soul[SOUL.md]
+        User[USER.md]
+        Memory[memory/MEMORY.md]
+        History[memory/history.jsonl]
+        GitMem[memory/.git/]
+        Skills[skills/]
+        Cron[cron/]
+        Heartbeat[HEARTBEAT.md]
+        WSID[.nanobot/workspace-id]
+    end
+
+    subgraph "Project Workspace (Per-Task Context)"
+        ProjAgents[AGENTS.md]
+        ProjFiles[Project files...]
+        ProjCWD[Shell CWD]
+    end
+
+    subgraph "Session Storage (Outside Workspace)"
+        SessionsDir[sessions/<workspace-id>/]
+        Transcripts[*.jsonl]
+        Index[sessions.sqlite3]
+    end
+
+    WSID --> SessionsDir
+    Soul -.->|Persists across| ProjAgents
+    User -.->|Persists across| ProjAgents
+    Memory -.->|Persists across| ProjAgents
+    History -.->|Persists across| ProjAgents
+    Skills -.->|Persists across| ProjAgents
+    Cron -.->|Persists across| ProjAgents
+    Heartbeat -.->|Persists across| ProjAgents
+```
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant WebUI
+    participant Gateway
+    participant AgentLoop
+    participant MemoryStore
+    participant SessionManager
+    participant MCP
+
+    User->>WebUI: Select project workspace
+    WebUI->>Gateway: Set topic workspace + access mode
+    Gateway->>AgentLoop: New message with project context
+    AgentLoop->>MemoryStore: Read SOUL.md, USER.md, MEMORY.md
+    AgentLoop->>SessionManager: Load recent session (by workspace-id)
+    AgentLoop->>MCP: Call @github, @knowledge-graph tools
+    AgentLoop->>MemoryStore: Write consolidated memory (Dream)
+    MemoryStore->>GitMem: Commit memory changes
+    SessionManager->>Transcripts: Append turn
+```
