@@ -1,0 +1,26 @@
+name: Deploy Static Assets (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source-dir:
+        description: "Local directory with static assets (relative to repo root)"
+        type: string
+        default: "static-assets"
+      target-subdir:
+        description: "Target subdirectory on VPS (e.g., 'bloggo', 'mowik', 'test')"
+        type: string
+        required: true
+      delete-extra:
+        description: "Delete files on VPS not in source"
+        type: boolean
+        default: true
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-static.yml
+    secrets: inherit
+    with:
+      source-dir: ${{ inputs.source-dir }}
+      target-subdir: ${{ inputs.target-subdir }}
+      delete-extra: ${{ inputs.delete-extra }}

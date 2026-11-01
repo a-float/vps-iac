@@ -53,17 +53,11 @@ sudo crontab -e
 ### Examples:
 
 ```cron
-# Daily backup at 03:00 (using tar method)
-0 3 * * * /home/nanobot/.nanobot/workspace/vps-iac/scripts/backup-nanobot.sh tar >> /var/log/nanobot-backup.log 2>&1
-
 # Daily restic backup at 03:30 (requires env vars in /etc/nanobot-backup.env)
-30 3 * * * source /etc/nanobot-backup.env && /home/nanobot/.nanobot/workspace/vps-iac/scripts/backup-nanobot.sh restic >> /var/log/nanobot-backup.log 2>&1
+30 3 * * * source /etc/nanobot-backup.env && restic backup --repo $RESTIC_REPOSITORY --exclude /opt/nanobot/.nanobot/run --exclude /opt/nanobot/.nanobot/updates --exclude /opt/nanobot/.nanobot/cache --exclude /opt/nanobot/.nanobot/logs --exclude /opt/nanobot/.nanobot/cli-apps /opt/nanobot/.nanobot >> /var/log/nanobot-backup.log 2>&1
 
 # Weekly disk space check (alert if >80%)
 0 6 * * 1 df -h /opt/nanobot | awk 'NR==2 {if ($5+0 > 80) print "WARNING: " $5 " used on /opt/nanobot"}' | mail -s "Nanobot Disk Alert" admin@example.com
-
-# Monthly nanobot image update check (manual deploy via GitHub Actions)
-0 9 1 * * cd /home/nanobot/.nanobot/workspace/vps-iac && git fetch origin main && git log --oneline -1 origin/main >> /var/log/nanobot-update-check.log 2>&1
 ```
 
 ### Environment File for Restic (`/etc/nanobot-backup.env`):
@@ -91,7 +85,7 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 EnvironmentFile=/etc/nanobot-backup.env
-ExecStart=/home/nanobot/.nanobot/workspace/vps-iac/scripts/backup-nanobot.sh restic
+ExecStart=restic backup --repo $RESTIC_REPOSITORY --exclude /opt/nanobot/.nanobot/run --exclude /opt/nanobot/.nanobot/updates --exclude /opt/nanobot/.nanobot/cache --exclude /opt/nanobot/.nanobot/logs --exclude /opt/nanobot/.nanobot/cli-apps /opt/nanobot/.nanobot
 StandardOutput=journal
 StandardError=journal
 ```
@@ -119,30 +113,6 @@ systemctl list-timers nanobot-backup.timer
 
 ---
 
-## GitHub Actions (For Image Updates)
-
-Your existing `.github/workflows/build-and-publish.yml` builds and publishes Docker images.
-
-### Manual Deploy Workflow Dispatch:
-```bash
-# Trigger via gh CLI
-gh workflow run build-and-publish.yml -f deploy=true -r main
-
-# Or via GitHub UI: Actions → Build and Publish → Run workflow
-```
-
-### Auto-Deploy on Main Branch Push:
-The workflow already triggers on `push: branches: [main]`. After image is published, update your VPS:
-
-```bash
-# On VPS (manual or via cron)
-cd /opt/nanobot
-docker compose pull
-docker compose up -d
-```
-
----
-
 ## Heartbeat vs Cron vs Systemd
 
 | Feature | Heartbeat | Nanobot Cron | System Cron | Systemd Timer |
@@ -164,7 +134,6 @@ docker compose up -d
 | Disk space check | System cron | Weekly Mon 06:00 |
 | Workspace integrity | Nanobot heartbeat | Every 30 min |
 | GitHub MCP health | Nanobot cron | Weekly Sun 04:00 |
-| Image update check | GitHub Actions + manual | On demand |
 | Dream consolidation | Built-in (config) | Every 12 hours |
 
 ---
@@ -172,8 +141,8 @@ docker compose up -d
 ## Quick Commands
 
 ```bash
-# Test backup script
-/home/nanobot/.nanobot/workspace/vps-iac/scripts/backup-nanobot.sh tar
+# Test restic backup
+source /etc/nanobot-backup.env && restic backup --repo $RESTIC_REPOSITORY /opt/nanobot/.nanobot
 
 # View backup logs
 tail -f /var/log/nanobot-backup.log

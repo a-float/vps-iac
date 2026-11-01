@@ -1,0 +1,87 @@
+name: Deploy Static Assets to VPS
+
+on:
+  workflow_call:
+    inputs:
+      source-dir:
+        description: "Directory containing static assets to deploy"
+        type: string
+        default: "dist"
+      target-subdir:
+        description: "Subdirectory under /srv/static on VPS (e.g., 'bloggo', 'mowik')"
+        type: string
+        required: true
+      delete-extra:
+        description: "Delete files on VPS not present in source (rsync --delete)"
+        type: boolean
+        default: true
+    secrets:
+      VPS_HOST:
+        required: true
+      VPS_SSH_PORT:
+        required: true
+      VPS_HOST_KEY_FINGERPRINT:
+        required: true
+      ANSIBLE_SSH_KEY:
+        required: true
+
+jobs:
+  deploy-static:
+    name: Deploy Static Assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.5.0
+
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
+          VPS_HOST_KEY_FINGERPRINT: ${{ secrets.VPS_HOST_KEY_FINGERPRINT }}
+          ANSIBLE_SSH_KEY: ${{ secrets.ANSIBLE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$ANSIBLE_SSH_KEY" > ~/.ssh/ansible_key
+          chmod 600 ~/.ssh/ansible_key
+          ssh-keyscan -p "$VPS_SSH_PORT" -t ed25519 -H "$VPS_HOST" > ~/.ssh/known_hosts
+          test "$(ssh-keygen -lf ~/.ssh/known_hosts | awk 'NR==1 {print $2}')" = "$VPS_HOST_KEY_FINGERPRINT"
+
+      - name: Deploy static assets via rsync
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
+          SOURCE_DIR: ${{ inputs.source-dir }}
+          TARGET_SUBDIR: ${{ inputs.target-subdir }}
+          DELETE_EXTRA: ${{ inputs.delete-extra }}
+        run: |
+          set -euo pipefail
+          TARGET_PATH="/srv/static/${TARGET_SUBDIR}"
+          
+          # Ensure target directory exists on VPS
+          ssh -p "$VPS_SSH_PORT" -i ~/.ssh/ansible_key root@"$VPS_HOST" \
+            "mkdir -p '$TARGET_PATH' && chown -R root:root /srv/static"
+          
+          # Build rsync command
+          RSYNC_OPTS=(-avz --chown=root:root)
+          if [[ "$DELETE_EXTRA" == "true" ]]; then
+            RSYNC_OPTS+=(--delete)
+          fi
+          
+          # Deploy
+          rsync "${RSYNC_OPTS[@]}" \
+            -e "ssh -p $VPS_SSH_PORT -i ~/.ssh/ansible_key" \
+            "${SOURCE_DIR}/" \
+            "root@${VPS_HOST}:${TARGET_PATH}/"
+          
+          echo "✅ Deployed to https://static.${{ vars.INTERNAL_DOMAIN }}/${TARGET_SUBDIR}/"
+
+      - name: Verify deployment
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
+          TARGET_SUBDIR: ${{ inputs.target-subdir }}
+        run: |
+          ssh -p "$VPS_SSH_PORT" -i ~/.ssh/ansible_key root@"$VPS_HOST" \
+            "ls -la /srv/static/${TARGET_SUBDIR}/ | head -20"

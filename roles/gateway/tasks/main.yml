@@ -20,10 +20,11 @@
     state: directory
     owner: root
     group: root
-    mode: "0644"
+    mode: "0755"
   loop:
     - /opt/gateway/caddy/conf
     - /opt/gateway/caddy/site/internal
+    - /opt/gateway/caddy/site/static
     - /opt/gateway/dnsmasq.d
 
 - name: Render Caddyfile

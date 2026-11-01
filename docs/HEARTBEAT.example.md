@@ -17,10 +17,10 @@ This file demonstrates how to use nanobot's protected heartbeat system for recur
 - Memory files are readable
 - Git repo in `memory/.git` is healthy
 
-```markdown
-- [ ] Workspace ID: `cat workspace/.nanobot/workspace-id`
-- [ ] Session dir exists: `ls sessions/<workspace-id>/`
-- [ ] Memory git status: `cd workspace && git status`
+```bash
+cat workspace/.nanobot/workspace-id
+ls sessions/<workspace-id>/
+cd workspace && git status
 ```
 
 **Alert if:** Workspace ID mismatch, missing session dir, git corruption.
@@ -52,54 +52,6 @@ restic snapshots --repo $RESTIC_REPO --latest 1 --json | jq -r '.[0].time'
 ```
 
 **Alert if:** Last backup > 28 hours old.
-
----
-
-### 4. Monitor Gateway Health (Every Run)
-
-**Schedule:** Every heartbeat.
-
-**Check:** Gateway health endpoint
-
-```bash
-curl -sf http://127.0.0.1:18790/health | jq -r '.status'
-```
-
-**Alert if:** Not "ok" or WebSocket not "running".
-
----
-
-### 5. Check for Nanobot Updates (Weekly)
-
-**Schedule:** Runs every heartbeat; reports only on Sundays.
-
-**Check:** Upstream nanobot version vs. deployed
-
-```bash
-# In vps-iac repo
-cd /home/nanobot/.nanobot/workspace/vps-iac
-git fetch origin main
-git log --oneline -1 origin/main
-git log --oneline -1 HEAD
-```
-
-**Alert if:** Commits behind origin/main.
-
----
-
-## Paused Tasks (Ideas for Later)
-
-### 6. Analyze Memory Growth
-
-Track `memory/history.jsonl` size over time. Alert if growing unusually fast.
-
-### 7. Check MCP Server Health
-
-Ping configured MCP servers (GitHub, Knowledge Graph) for responsiveness.
-
-### 8. Review Dream Consolidation
-
-Check `/dream-log` output for unexpected memory changes.
 
 ---
 
@@ -141,21 +93,3 @@ The heartbeat runs on a fixed interval (`intervalS`). For precise cron-like sche
 ```
 
 Cron jobs run as scheduled turns in their origin chat and **always deliver results** (unlike heartbeat which suppresses "nothing to report").
-
----
-
-## Task Format
-
-Each task under `## Active Tasks` should be a markdown section with:
-
-```markdown
-### N. Task Name (Frequency)
-
-**Schedule:** When it runs.
-
-**Check:** What to verify (bash command or description).
-
-**Alert if:** Condition that triggers notification.
-```
-
-The agent reads this file, executes the checks, and reports only actionable findings.

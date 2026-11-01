@@ -189,20 +189,13 @@ The dropdown in the WebUI header lets you pick a **project workspace** for the c
 
 Nanobot's memory system (`MEMORY.md`, `history.jsonl`, `SOUL.md`, `USER.md`) is **document-based**, not graph-based. Dream consolidation edits Markdown files surgically.
 
-### Option A: MCP Knowledge Graph Servers (Recommended)
+### Option A: MCP Knowledge Graph Server (Recommended)
 
 Connect an MCP server that provides a knowledge graph. Nanobot supports MCP natively.
 
-#### Top MCP Knowledge Graph Servers
+**Recommended:** `shaneholloman/mcp-knowledge-graph` (SQLite, stdio) — zero infrastructure, single `.db` file, backed up with your normal nanobot backup.
 
-| Server | Backend | Deployment | Notes |
-|--------|---------|------------|-------|
-| **shaneholloman/mcp-knowledge-graph** | SQLite (local file) | `npx` / Docker | Simple, file-based, good for personal use |
-| **mekayelanik/knowledge-graph-mcp** | SQLite | Docker (Alpine) | Minimal footprint, Docker Hub image |
-| **falkordb/graphiti-knowledge-graph-mcp** | FalkorDB (Redis-based) | Docker | Temporal knowledge graph, incremental updates |
-| **Official Memory MCP** | SQLite / PostgreSQL | `npx` / Docker | From modelcontextprotocol org |
-
-#### Quick Start: Local SQLite Knowledge Graph (shaneholloman)
+#### Quick Start
 
 **1. Add to nanobot config (`config.json`):**
 
@@ -228,82 +221,24 @@ Connect an MCP server that provides a knowledge graph. Nanobot supports MCP nati
 @knowledge-graph Show me the graph for "language learning app"
 ```
 
-#### Docker Deployment (mekayelanik)
-
-```yaml
-# Add to your docker-compose.yml
-services:
-  knowledge-graph-mcp:
-    image: mekayelanik/knowledge-graph-mcp:latest
-    volumes:
-      - /opt/nanobot/knowledge-graph:/data
-    # No ports needed — stdio only
-```
-
-Then in nanobot config:
-```json
-{
-  "tools": {
-    "mcpServers": {
-      "knowledge-graph": {
-        "command": "docker",
-        "args": ["run", "--rm", "-i", "-v", "/opt/nanobot/knowledge-graph:/data", "mekayelanik/knowledge-graph-mcp:latest"],
-        "enabledTools": ["create_entities", "create_relations", "add_observations", "read_graph", "search_nodes"]
-      }
-    }
-  }
-}
-```
-
-#### Graphiti (Temporal Knowledge Graph)
-
-For time-aware graphs (when did facts change?):
-
-```yaml
-services:
-  graphiti-mcp:
-    image: falkordb/graphiti-knowledge-graph-mcp:latest
-    environment:
-      - FALKORDB_HOST=graphiti-db
-      - FALKORDB_PORT=6379
-    depends_on:
-      - graphiti-db
-
-  graphiti-db:
-    image: falkordb/falkordb:latest
-    ports:
-      - "6379:6379"
-    volumes:
-      - /opt/nanobot/graphiti-data:/data
-```
-
-### Option B: External SaaS with MCP
+### Alternative: External SaaS with MCP
 
 | Service | MCP Support | Notes |
 |---------|-------------|-------|
 | **Notion** | Official MCP (OAuth) | WebUI Apps → MCP → Notion → Connect |
 | **Linear** | Official MCP (OAuth) | Good for issue tracking as graph |
 | **Obsidian** | Community MCP plugins | Local-first, Markdown-based |
-| **Roam Research** | No official MCP | Export → import to graph MCP |
 
-### Option C: Build Your Own Graph View
+### Build Your Own Graph View
 
 Since nanobot's memory is Markdown + JSONL, you can:
 
-1. **Export memory to a graph tool** — Write a script to parse `MEMORY.md` + `history.jsonl` → GraphML/JSON → visualize in Obsidian, Gephi, or a web app.
+1. **Export memory to a graph tool** — Parse `MEMORY.md` + `history.jsonl` → GraphML/JSON → visualize in Obsidian, Gephi, or a web app.
 2. **Use the `memory` skill** — Built-in skill for querying `history.jsonl`:
    ```
    $memory search "language learning"
    ```
 3. **WebUI file preview** — In Full Access mode, preview `memory/MEMORY.md` directly.
-
-### Recommendation
-
-**Start with `shaneholloman/mcp-knowledge-graph` (SQLite, stdio).** It's:
-- Zero infrastructure (single `.db` file)
-- Backed up with your normal nanobot backup
-- Queryable via `@knowledge-graph` in any chat
-- No separate Docker service needed
 
 ---
 
@@ -379,20 +314,7 @@ rsync -avz --delete \
   /opt/nanobot/.nanobot/ user@backup-server:/backups/nanobot/
 ```
 
-#### Method 3: Borg Backup (Deduplicated, Encrypted)
-
-```bash
-borg create --compression lz4 \
-  --exclude '/opt/nanobot/.nanobot/run' \
-  --exclude '/opt/nanobot/.nanobot/updates' \
-  --exclude '/opt/nanobot/.nanobot/cache' \
-  --exclude '/opt/nanobot/.nanobot/logs' \
-  --exclude '/opt/nanobot/.nanobot/cli-apps' \
-  /mnt/backup::nanobot-{now:%Y-%m-%d} \
-  /opt/nanobot/.nanobot
-```
-
-#### Method 4: Git for Workspace Memory (Built-in!)
+#### Method 3: Git for Workspace Memory (Built-in!)
 
 Nanobot **already versions `SOUL.md`, `USER.md`, `memory/MEMORY.md` via Git** in `workspace/memory/.git/`.
 
@@ -412,8 +334,11 @@ cd /opt/nanobot/.nanobot/workspace && git log --oneline -10
 # 1. Stop nanobot
 docker compose -f /opt/nanobot/compose.yml down
 
-# 2. Restore from backup
+# 2. Restore from backup (restic)
 restic restore latest --target /opt/nanobot/.nanobot --repo s3:...
+
+# 2b. Or restore from rsync
+# rsync -avz user@backup-server:/backups/nanobot/ /opt/nanobot/.nanobot/
 
 # 3. Verify workspace-id matches
 cat /opt/nanobot/.nanobot/workspace/.nanobot/workspace-id
@@ -444,13 +369,6 @@ Your workflow uses:
 ### Option: GitHub Official MCP Server
 
 GitHub provides an official MCP server: `ghcr.io/github/github-mcp-server`
-
-#### Deployment Options
-
-| Mode | Description | Use Case |
-|------|-------------|----------|
-| **stdio (local)** | Runs as subprocess via `npx`/`docker run -i` | Simple, no network exposure |
-| **HTTP/SSE (remote)** | Long-running server, OAuth or PAT auth | Shared across instances, WebUI OAuth flow |
 
 #### Quick Setup: stdio with PAT (Simplest)
 
@@ -491,31 +409,6 @@ GitHub provides an official MCP server: `ghcr.io/github/github-mcp-server`
 @github Create issue "Add monitoring" in a-float/vps-iac
 @github Search for "docker" in a-float/vps-iac
 ```
-
-#### Advanced: HTTP Mode with OAuth (WebUI Connect Flow)
-
-**1. Deploy MCP server as a service:**
-
-```yaml
-# docker-compose.yml addition
-services:
-  github-mcp:
-    image: ghcr.io/github/github-mcp-server:latest
-    environment:
-      - GITHUB_OAUTH_CLIENT_ID=${GITHUB_OAUTH_CLIENT_ID}
-      - GITHUB_OAUTH_CLIENT_SECRET=${GITHUB_OAUTH_CLIENT_SECRET}
-      - GITHUB_OAUTH_REDIRECT_URI=https://your-domain/mcp/github/callback
-    ports:
-      - "127.0.0.1:3000:3000"
-    command: ["--transport", "http", "--port", "3000"]
-```
-
-**2. Configure in nanobot (via WebUI Apps → MCP → Add → Custom → HTTP → OAuth):**
-- URL: `http://github-mcp:3000/mcp`
-- Auth: OAuth
-- Click **Connect** → Authorize in browser
-
-**3. Tokens stored in `/opt/nanobot/.nanobot/auth/mcp.json`** (not in config).
 
 ### Comparison: GH_TOKEN + CLI vs. MCP
 
@@ -665,3 +558,49 @@ graph TB
 ---
 
 *Generated as part of vps-iac branch `docs/nanobot-management-guide`*
+
+---
+
+## TODOs / R&D — Ideal Setup & Future Work
+
+This section tracks ideas, experiments, and improvements to implement. Not all are committed to — this is a brainstorming space.
+
+### Infrastructure & Deployment
+
+- [ ] **Migrate Docker image build to `docker/build-push-action@v5` + GHA cache** — Replace `make build-image/push-image` in `.github/workflows/deploy.yml` for better layer caching and multi-platform support.
+- [ ] **Add health checks to all services** — Ensure `nanobot-gateway`, `nanobot-cli`, and any sidecars have proper Docker health checks.
+- [ ] **Implement blue-green or rolling deploy for nanobot** — Current Ansible playbook restarts container; zero-downtime deploy would be nice.
+- [ ] **Add monitoring/alerting** — Prometheus + Grafana or simpler: `cron` job checking gateway health endpoint + Telegram alert.
+- [ ] **Secrets management** — Move from `.env`/env vars to 1Password CLI, Bitwarden, or HashiCorp Vault for production.
+
+### Nanobot Configuration
+
+- [ ] **Add GitHub MCP server** — Enable `@github` tool calls in chat (see [Section 5](#5-github-access-via-mcp)).
+- [ ] **Add Knowledge Graph MCP** — `shaneholloman/mcp-knowledge-graph` for graph-based notes (see [Section 3](#3-graph-based-notes--knowledge-graph)).
+- [ ] **Configure HEARTBEAT.md** — Deploy simplified `HEARTBEAT.example.md` as actual `HEARTBEAT.md` in workspace.
+- [ ] **Set up automated backups** — Restic to S3/Backblaze B2 with cron (see [Section 4](#4-backup-strategy)).
+- [ ] **Add custom skills** — Language learning helpers, project-specific tools.
+
+### Developer Experience
+
+- [ ] **Pre-commit hooks** — `ansible-lint`, `yamllint`, `markdownlint` for docs.
+- [ ] **Documentation site** — Deploy `docs/` via GitHub Pages or mkdocs for easier reading.
+- [ ] **Makefile targets** — Common ops: `make deploy`, `make backup`, `make logs`, `make update`.
+- [ ] **Test Ansible playbook locally** — Molecule or `ansible-playbook --check` in CI.
+
+### Static Asset Hosting (New)
+
+- [ ] **Wire up bloggo to call reusable `deploy-static.yml`** — Auto-deploy `public/` or `out/` on push to main.
+- [ ] **Wire up mowik (language learning app) to call reusable `deploy-static.yml`** — Deploy built SPA assets.
+- [ ] **Add cache invalidation strategy** — Versioned subdirs or query params for cache busting.
+
+### Experimental / Nice-to-Have
+
+- [ ] **Obsidian sync via MCP** — If using Obsidian for personal notes, connect via community MCP.
+- [ ] **Local LLM via Ollama** — Run models locally for privacy/offline; add as MCP or OpenAI-compatible endpoint.
+- [ ] **Tailscale SSH / MagicDNS** — Simplify VPS access; already have Tailscale role.
+- [ ] **Auto-update nanobot image** — Watchtower or custom cron to pull latest `ghcr.io/.../nanobot-gateway` and restart.
+
+---
+
+*This is a living document — update as priorities shift.*
