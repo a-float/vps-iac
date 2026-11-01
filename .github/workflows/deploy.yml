@@ -1,0 +1,149 @@
+name: Deploy VPS Infrastructure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deploy.yml"
+      - "submodules/nanobot"
+      - "submodules/nanobot/**"
+      - "Dockerfile"
+      - "group_vars/**"
+      - "inventory/**"
+      - "roles/**"
+      - "Makefile"
+      - "requirements.yml"
+      - "site.yml"
+  workflow_dispatch:
+    inputs:
+      rebuild:
+        description: "Force rebuild of Docker images before deploying"
+        type: boolean
+        default: false
+        required: false
+      deploy:
+        description: "Run deployment after build (if any)"
+        type: boolean
+        default: true
+        required: false
+
+concurrency:
+  group: deploy-vps-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  DOCKERHUB_USERNAME: afloaty
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      needs-build: ${{ steps.filter.outputs.build }}
+      needs-deploy: ${{ steps.set-deploy.outputs.deploy }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.5.0
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Determine changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          list-files: shell
+          filters: |
+            build:
+              - 'submodules/nanobot'
+              - 'submodules/nanobot/**'
+              - 'Dockerfile'
+
+      - name: Set deploy output
+        id: set-deploy
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "deploy=${{ inputs.deploy }}" >> $GITHUB_OUTPUT
+          else
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Handle manual dispatch rebuild
+        if: github.event_name == 'workflow_dispatch' && inputs.rebuild == 'true'
+        run: echo "build=true" >> $GITHUB_OUTPUT
+        shell: bash
+
+  build-and-publish:
+    name: Build and Publish Docker Images
+    needs: detect-changes
+    if: needs.detect-changes.outputs.needs-build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.5.0
+        with:
+          submodules: recursive
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # TODO: Consider docker/build-push-action@v5 with cache-from/to: type=gha for faster builds
+      # Requires switching from make build-image/push-image to the action
+      - name: Build Docker images
+        run: |
+          make build-image
+
+      - name: Push Docker images
+        run: |
+          make push-image
+
+  deploy:
+    name: Deploy to VPS
+    needs: [detect-changes, build-and-publish]
+    if: needs.detect-changes.outputs.needs-deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.5.0
+        with:
+          submodules: recursive
+
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
+          VPS_HOST_KEY_FINGERPRINT: ${{ secrets.VPS_HOST_KEY_FINGERPRINT }}
+          ANSIBLE_SSH_KEY: ${{ secrets.ANSIBLE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$ANSIBLE_SSH_KEY" > ~/.ssh/ansible_key
+          chmod 600 ~/.ssh/ansible_key
+          ssh-keyscan -p "$VPS_SSH_PORT" -t ed25519 -H "$VPS_HOST" > ~/.ssh/known_hosts
+          test "$(ssh-keygen -lf ~/.ssh/known_hosts | awk 'NR==1 {print $2}')" = "$VPS_HOST_KEY_FINGERPRINT"
+
+      - name: Run Ansible
+        env:
+          VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+          VAULT_PASSWORD_FILE: ${{ runner.temp }}/ansible_vault_pass
+        run: |
+          echo "$VAULT_PASSWORD" > "$VAULT_PASSWORD_FILE"
+          chmod 600 "$VAULT_PASSWORD_FILE"
+
+          ansible-playbook \
+            --private-key="$HOME/.ssh/ansible_key" \
+            --vault-password-file="$VAULT_PASSWORD_FILE" \
+            -i inventory/hosts.yml \
+            -e "ansible_host=${{ secrets.VPS_HOST }}" \
+            -e "ansible_port=${{ secrets.VPS_SSH_PORT }}" \
+            site.yml
