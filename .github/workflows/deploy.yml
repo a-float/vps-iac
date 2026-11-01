@@ -4,15 +4,16 @@ on:
   push:
     branches: [main]
     paths:
+      - ".github/workflows/deploy.yml"
       - "submodules/nanobot"
       - "submodules/nanobot/**"
       - "Dockerfile"
-      - "roles/**"
-      - "site.yml"
+      - "group_vars/**"
       - "inventory/**"
-      - "requirements.yml"
+      - "roles/**"
       - "Makefile"
-      - ".github/workflows/deploy.yml"
+      - "requirements.yml"
+      - "site.yml"
   workflow_dispatch:
     inputs:
       rebuild:
