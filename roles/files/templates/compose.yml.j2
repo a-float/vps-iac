@@ -1,0 +1,36 @@
+services:
+  files:
+    container_name: files
+    image: sigoden/dufs:v0.47.0
+    restart: unless-stopped
+    expose:
+      - "5000"
+    command:
+      - /data
+      - --bind
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --render-try-index
+      - --allow-upload
+      - --allow-delete
+      - -a
+      - "{{ files_dufs_user }}:{{ files_dufs_password }}@/:rw"
+      - -a
+      - "@/"
+    volumes:
+      - /opt/files/data:/data
+    networks:
+      - gateway
+    deploy:
+      resources:
+        limits:
+          cpus: "0.20"
+          memory: 64M
+
+networks:
+  gateway:
+    external: true
+
+#  upload file with auth
+#  curl -T my-file -I http://127.0.0.1:5000/new-path/path-to-file --user user:pass

@@ -4,10 +4,11 @@
 
   roles:
     # - base
-    - docker
-    - tailscale
-    - nanobot
-    - monitoring
+    # - docker
+    # - tailscale
+    # - nanobot
+    # - monitoring
     # - dockhand
-    - arcane
+    # - arcane
+    - files
     - gateway

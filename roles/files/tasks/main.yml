@@ -1,0 +1,25 @@
+
+---
+- name: Create files data directory
+  ansible.builtin.file:
+    path: /opt/files/data
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Render files Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: /opt/files/compose.yml
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Pull and start files
+  community.docker.docker_compose_v2:
+    project_src: /opt/files
+    files:
+      - compose.yml
+    state: present
+    pull: missing

@@ -36,6 +36,11 @@ http://{{ internal_domain }}, http://*.{{ internal_domain }} {
                 reverse_proxy arcane:3552
         }
 
+        @files host files.{{ internal_domain }}
+        handle @files {
+                reverse_proxy files:5000
+        }
+
         root /srv/internal
         file_server
 }
