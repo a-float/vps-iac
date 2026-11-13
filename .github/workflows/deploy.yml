@@ -46,7 +46,7 @@ jobs:
       needs-deploy: ${{ steps.set-deploy.outputs.deploy }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.5.0
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
